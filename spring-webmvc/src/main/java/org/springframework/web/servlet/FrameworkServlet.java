@@ -559,7 +559,7 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 	 */
 	protected WebApplicationContext initWebApplicationContext() {
 		// [SPRING-MVC-START] 获取Root Context，建立父子容器关系并初始化Servlet Context
-		// 场景1：构造时注入Context（SpringBoot内嵌容器场景）
+		// 场景1：构造时注入Context（分两种子场景：SpringBoot已refresh / 传统SPI未refresh）
 		WebApplicationContext rootContext =
 				WebApplicationContextUtils.getWebApplicationContext(getServletContext());
 		WebApplicationContext wac = null;
@@ -577,15 +577,8 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 					// 子容器可访问父容器Bean，反之不行
 					cwac.setParent(rootContext);
 				}
-				// 路径A：SpringBoot内嵌容器，构造DispatcherServlet时注入了Context。Context来源：外部传入（已创建但未refresh）
-				// 按顺序做了6件事
-				// 1. 设置 Context ID（如果还是默认ID，生成更有意义的）
-				// 2. 绑定 Servlet 环境（ServletContext、ServletConfig、Namespace）
-				// 3. 注册 ContextRefreshListener（监听 ContextRefreshedEvent → 触发 onRefresh()）
-				// 4. 初始化 PropertySources（提前将 Servlet 属性源放好）
-				// 5. postProcessWebApplicationContext（子类扩展点，默认空实现）
-				// 6. applyInitializers（执行所有 ApplicationContextInitializer）
-				// 7. wac.refresh() ← 最核心，进入 AbstractApplicationContext.refresh() 的 12 步流程
+				// 路径A：传统SPI编程式注册（如AbstractDispatcherServletInitializer），构造DispatcherServlet时注入了Context，但Context尚未refresh
+				// SpringBoot场景不会走此路径！因为SpringApplication.run()已提前refresh了Context，cwac.isActive()=true，整个if块被跳过
 				configureAndRefreshWebApplicationContext(cwac);
 			}
 		}
@@ -600,7 +593,7 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 		if (wac == null) {
 			// No context instance is defined for this servlet -> create a local one
 			// 场景3：自行创建Servlet Context，以Root Context为父容器。
-			// 路径B：传统Servlet容器，通过SPI/web.xml启动
+			// 路径B：传统Servlet容器，无注入Context → 自行createWebApplicationContext() → configureAndRefreshWebApplicationContext()
 			wac = createWebApplicationContext(rootContext);
 		}
 
@@ -609,10 +602,14 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 			// support or the context injected at construction time had already been
 			// refreshed -> trigger initial onRefresh manually here.
 			// [SPRING-MVC-START] 手动触发onRefresh，初始化MVC策略组件
-			// 如果Context已通过configureAndRefreshWebApplicationContext()刷新，
-			// 则ContextRefreshedEvent会触发onRefresh，此处无需再手动调用
+			// 两种情况会进入此分支：
+			// ① SpringBoot场景：Context已被SpringApplication.run()刷新，但configureAndRefreshWebApplicationContext()未被调用，
+			//   因此ContextRefreshListener从未注册，收不到ContextRefreshedEvent，refreshEventReceived=false → 需手动onRefresh
+			// ② 非ConfigurableWebApplicationContext场景：不支持refresh机制，同样需手动onRefresh
+			// （如果走了路径A或路径B的configureAndRefreshWebApplicationContext，ContextRefreshedEvent会触发onApplicationEvent
+			//  → refreshEventReceived=true，此处就不会再手动调用了）
 			synchronized (this.onRefreshMonitor) {
-				// 初始化tomcat容器
+				// 初始化MVC策略组件（九大组件）
 				onRefresh(wac);
 			}
 		}
@@ -687,6 +684,14 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 	}
 
 	protected void configureAndRefreshWebApplicationContext(ConfigurableWebApplicationContext wac) {
+		// 按顺序做了7件事
+		// 1. 设置 Context ID（如果还是默认ID，生成更有意义的）
+		// 2. 绑定 Servlet 环境（ServletContext、ServletConfig、Namespace）
+		// 3. 注册 ContextRefreshListener（监听 ContextRefreshedEvent → 触发 onRefresh()）
+		// 4. 初始化 PropertySources（提前将 Servlet 属性源放好）
+		// 5. postProcessWebApplicationContext（子类扩展点，默认空实现）
+		// 6. applyInitializers（执行所有 ApplicationContextInitializer）
+		// 7. wac.refresh() ← 最核心，进入 AbstractApplicationContext.refresh() 的 12 步流程
 		if (ObjectUtils.identityToString(wac).equals(wac.getId())) {
 			// The application context ID is still set to its original default value
 			// -> assign a more useful ID based on available information
