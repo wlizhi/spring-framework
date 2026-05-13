@@ -431,6 +431,8 @@ public class DispatcherServlet extends FrameworkServlet {
 	 */
 	@Override
 	protected void onRefresh(ApplicationContext context) {
+		// [SPRING-MVC-START] MVC策略初始化入口，由FrameworkServlet.initWebApplicationContext()调用
+		// 或由ContextRefreshedEvent事件触发
 		// 初始化MVC生命周期内的各种策略模式实例。
 		initStrategies(context);
 	}
@@ -440,14 +442,14 @@ public class DispatcherServlet extends FrameworkServlet {
 	 * <p>May be overridden in subclasses in order to initialize further strategy objects.
 	 */
 	protected void initStrategies(ApplicationContext context) {
-		initMultipartResolver(context);
-		initLocaleResolver(context);
-		initHandlerMappings(context);
-		initHandlerAdapters(context);
-		initHandlerExceptionResolvers(context);
-		initRequestToViewNameTranslator(context);
-		initViewResolvers(context);
-		initFlashMapManager(context);
+		initMultipartResolver(context);           // 1.文件上传解析器
+		initLocaleResolver(context);              // 2.国际化解析器
+		initHandlerMappings(context);             // [SPRING-MVC-START] 3.请求映射器（找Handler）★最关键
+		initHandlerAdapters(context);             // 4.Handler适配器（执行Handler）★最关键
+		initHandlerExceptionResolvers(context);   // 5.异常解析器
+		initRequestToViewNameTranslator(context); // 6.请求到视图名翻译器
+		initViewResolvers(context);               // 7.视图解析器
+		initFlashMapManager(context);             // 8.FlashMap管理器（redirect传参）
 	}
 
 	/**

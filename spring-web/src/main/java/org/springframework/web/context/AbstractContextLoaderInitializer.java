@@ -46,6 +46,8 @@ public abstract class AbstractContextLoaderInitializer implements WebApplication
 
 	@Override
 	public void onStartup(ServletContext servletContext) throws ServletException {
+		// [SPRING-MVC-START] 注册Root ApplicationContext，它是整个应用的根容器
+		// 包含Service/DataSource/事务管理等中间层Bean，将作为Servlet Context的父容器
 		registerContextLoaderListener(servletContext);
 	}
 
@@ -58,6 +60,8 @@ public abstract class AbstractContextLoaderInitializer implements WebApplication
 	protected void registerContextLoaderListener(ServletContext servletContext) {
 		WebApplicationContext rootAppContext = createRootApplicationContext();
 		if (rootAppContext != null) {
+			// [SPRING-MVC-START] 将Root Context包装进ContextLoaderListener并注册到ServletContext
+			// 容器启动后回调contextInitialized() → 触发Root Context的refresh()
 			ContextLoaderListener listener = new ContextLoaderListener(rootAppContext, servletContext);
 			listener.setContextInitializers(getRootApplicationContextInitializers());
 			servletContext.addListener(listener);

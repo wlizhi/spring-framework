@@ -120,6 +120,8 @@ public class ContextLoaderListener extends ContextLoader implements ServletConte
 	 */
 	@Override
 	public void contextInitialized(ServletContextEvent event) {
+		// [SPRING-MVC-START] Root ApplicationContext的refresh入口
+		// 容器启动回调此方法 → initWebApplicationContext() → Root Context的refresh()
 		ServletContext scToUse = getServletContextToUse(event);
 		initWebApplicationContext(scToUse);
 	}

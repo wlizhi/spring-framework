@@ -140,6 +140,8 @@ public class SpringServletContainerInitializer implements ServletContainerInitia
 	public void onStartup(@Nullable Set<Class<?>> webAppInitializerClasses, ServletContext servletContext)
 			throws ServletException {
 
+		// [SPRING-MVC-START] Servlet容器通过SPI机制扫描 META-INF/services/jakarta.servlet.ServletContainerInitializer
+		// 发现本类并调用onStartup()，这是SpringMVC在Java层面的第一个入口
 		List<WebApplicationInitializer> initializers = Collections.emptyList();
 
 		if (webAppInitializerClasses != null) {
@@ -166,6 +168,8 @@ public class SpringServletContainerInitializer implements ServletContainerInitia
 		}
 
 		servletContext.log(initializers.size() + " Spring WebApplicationInitializers detected on classpath");
+		// [SPRING-MVC-START] 按@Order排序后逐个调用WebApplicationInitializer.onStartup()
+		// 典型实现：AbstractDispatcherServletInitializer → 注册ContextLoaderListener + DispatcherServlet
 		AnnotationAwareOrderComparator.sort(initializers);
 		for (WebApplicationInitializer initializer : initializers) {
 			initializer.onStartup(servletContext);

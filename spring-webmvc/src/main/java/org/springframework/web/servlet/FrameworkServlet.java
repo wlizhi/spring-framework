@@ -525,6 +525,8 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 		long startTime = System.currentTimeMillis();
 
 		try {
+			// [SPRING-MVC-START] DispatcherServlet初始化的核心入口
+			// HttpServletBean.init() → initServletBean() → initWebApplicationContext()
 			this.webApplicationContext = initWebApplicationContext();
 			initFrameworkServlet();
 		}
@@ -556,6 +558,8 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 	 * @see #setContextConfigLocation
 	 */
 	protected WebApplicationContext initWebApplicationContext() {
+		// [SPRING-MVC-START] 获取Root Context，建立父子容器关系并初始化Servlet Context
+		// 场景1：构造时注入Context（SpringBoot内嵌容器场景）
 		WebApplicationContext rootContext =
 				WebApplicationContextUtils.getWebApplicationContext(getServletContext());
 		WebApplicationContext wac = null;
@@ -569,6 +573,8 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 				if (cwac.getParent() == null) {
 					// The context instance was injected without an explicit parent -> set
 					// the root application context (if any; may be null) as the parent
+					// 将Root Context设为Servlet Context的父容器
+					// 子容器可访问父容器Bean，反之不行
 					cwac.setParent(rootContext);
 				}
 				configureAndRefreshWebApplicationContext(cwac);
@@ -579,10 +585,12 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 			// has been registered in the servlet context. If one exists, it is assumed
 			// that the parent context (if any) has already been set and that the
 			// user has performed any initialization such as setting the context ID
+			// 场景2：从ServletContext属性中查找已存在的Context
 			wac = findWebApplicationContext();
 		}
 		if (wac == null) {
 			// No context instance is defined for this servlet -> create a local one
+			// 场景3：自行创建Servlet Context，以Root Context为父容器
 			wac = createWebApplicationContext(rootContext);
 		}
 
@@ -590,6 +598,9 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 			// Either the context is not a ConfigurableApplicationContext with refresh
 			// support or the context injected at construction time had already been
 			// refreshed -> trigger initial onRefresh manually here.
+			// [SPRING-MVC-START] 手动触发onRefresh，初始化MVC策略组件
+			// 如果Context已通过configureAndRefreshWebApplicationContext()刷新，
+			// 则ContextRefreshedEvent会触发onRefresh，此处无需再手动调用
 			synchronized (this.onRefreshMonitor) {
 				// 初始化tomcat容器
 				onRefresh(wac);
@@ -694,6 +705,8 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 
 		postProcessWebApplicationContext(wac);
 		applyInitializers(wac);
+		// [SPRING-MVC-START] Servlet Context的refresh触发点！进入AbstractApplicationContext.refresh()的12步流程
+		// refresh完成后会发布ContextRefreshedEvent → 触发onRefresh()
 		wac.refresh();
 	}
 

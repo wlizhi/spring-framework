@@ -61,6 +61,7 @@ public abstract class AbstractDispatcherServletInitializer extends AbstractConte
 
 	@Override
 	public void onStartup(ServletContext servletContext) throws ServletException {
+		// [SPRING-MVC-START] 第一步：注册Root Context；第二步：注册DispatcherServlet
 		super.onStartup(servletContext);
 		registerDispatcherServlet(servletContext);
 	}
@@ -81,12 +82,15 @@ public abstract class AbstractDispatcherServletInitializer extends AbstractConte
 		Assert.state(StringUtils.hasLength(servletName), "getServletName() must not return null or empty");
 
 		WebApplicationContext servletAppContext = createServletApplicationContext();
+		// 创建Servlet专用的ApplicationContext，包含Controller/ViewResolver/HandlerMapping等Web层Bean
 		Assert.state(servletAppContext != null, "createServletApplicationContext() must not return null");
 
 		FrameworkServlet dispatcherServlet = createDispatcherServlet(servletAppContext);
+		// 用Servlet Context创建DispatcherServlet实例
 		Assert.state(dispatcherServlet != null, "createDispatcherServlet(WebApplicationContext) must not return null");
 		dispatcherServlet.setContextInitializers(getServletApplicationContextInitializers());
 
+		// 将DispatcherServlet注册到ServletContext，loadOnStartup=1确保容器启动时立即初始化Servlet
 		ServletRegistration.Dynamic registration = servletContext.addServlet(servletName, dispatcherServlet);
 		if (registration == null) {
 			throw new IllegalStateException("Failed to register servlet with name '" + servletName + "'. " +
