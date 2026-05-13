@@ -577,6 +577,15 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 					// 子容器可访问父容器Bean，反之不行
 					cwac.setParent(rootContext);
 				}
+				// 路径A：SpringBoot内嵌容器，构造DispatcherServlet时注入了Context。Context来源：外部传入（已创建但未refresh）
+				// 按顺序做了6件事
+				// 1. 设置 Context ID（如果还是默认ID，生成更有意义的）
+				// 2. 绑定 Servlet 环境（ServletContext、ServletConfig、Namespace）
+				// 3. 注册 ContextRefreshListener（监听 ContextRefreshedEvent → 触发 onRefresh()）
+				// 4. 初始化 PropertySources（提前将 Servlet 属性源放好）
+				// 5. postProcessWebApplicationContext（子类扩展点，默认空实现）
+				// 6. applyInitializers（执行所有 ApplicationContextInitializer）
+				// 7. wac.refresh() ← 最核心，进入 AbstractApplicationContext.refresh() 的 12 步流程
 				configureAndRefreshWebApplicationContext(cwac);
 			}
 		}
@@ -590,7 +599,8 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 		}
 		if (wac == null) {
 			// No context instance is defined for this servlet -> create a local one
-			// 场景3：自行创建Servlet Context，以Root Context为父容器
+			// 场景3：自行创建Servlet Context，以Root Context为父容器。
+			// 路径B：传统Servlet容器，通过SPI/web.xml启动
 			wac = createWebApplicationContext(rootContext);
 		}
 
