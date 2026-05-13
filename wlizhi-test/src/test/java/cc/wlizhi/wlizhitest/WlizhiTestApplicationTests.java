@@ -1,10 +1,10 @@
-package cc.wlizhi.springbootdemo;
+package cc.wlizhi.wlizhitest;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class SpringbootDemoApplicationTests {
+class WlizhiTestApplicationTests {
 
 	@Test
 	void contextLoads() {

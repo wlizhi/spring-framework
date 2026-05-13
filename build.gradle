@@ -10,7 +10,7 @@ plugins {
 }
 
 ext {
-	moduleProjects = subprojects.findAll { it.name.startsWith("spring-") }
+	moduleProjects = subprojects.findAll { it.name.startsWith("spring-") || it.name.startsWith("springboot") }
 	javaProjects = subprojects.findAll { !it.name.startsWith("framework-") }
 }
 

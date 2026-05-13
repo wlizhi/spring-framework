@@ -431,6 +431,7 @@ public class DispatcherServlet extends FrameworkServlet {
 	 */
 	@Override
 	protected void onRefresh(ApplicationContext context) {
+		// 初始化MVC生命周期内的各种策略模式实例。
 		initStrategies(context);
 	}
 

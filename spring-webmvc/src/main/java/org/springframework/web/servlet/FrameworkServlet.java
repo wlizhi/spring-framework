@@ -589,6 +589,7 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 			// support or the context injected at construction time had already been
 			// refreshed -> trigger initial onRefresh manually here.
 			synchronized (this.onRefreshMonitor) {
+				// initWebApplicationContext：触发 servlet 特定的刷新逻辑，允许子类在上下文刷新后执行自定义初始化操作
 				onRefresh(wac);
 			}
 		}
@@ -843,6 +844,7 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 	 */
 	protected void onRefresh(ApplicationContext context) {
 		// For subclasses: do nothing by default.
+		// 子类覆盖此方法，比如DispatcherServlet在此处加载了嵌入式tomcat。
 	}
 
 	/**

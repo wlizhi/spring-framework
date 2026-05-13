@@ -6,11 +6,11 @@ plugins {
 
 group = 'cc.wlizhi'
 version = '0.0.1-SNAPSHOT'
-description = 'springboot-demo'
+description = 'wlizhi-test'
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(17)
+        languageVersion = JavaLanguageVersion.of(25)
     }
 }
 
